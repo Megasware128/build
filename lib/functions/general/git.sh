@@ -286,18 +286,23 @@ function fetch_from_repo() {
 
 					cd "${git_work_dir}" || exit
 
-					local surl sref
-					surl=$(git config -f .gitmodules --get "submodule.${name}.url")
-					sref=$(git config -f .gitmodules --get "submodule.${name}.branch" || true)
+					local surl sref submodule_commit
+surl=$(git config -f .gitmodules --get "submodule.${name}.url")
+submodule_commit=$(git ls-tree HEAD "${path}" | awk '{print $3}')
 
-					if [[ -n $sref ]]; then
-						sref="branch:$sref"
-					else
-						sref="head"
-					fi
+if [[ -n ${submodule_commit} ]]; then
+sref="commit:${submodule_commit}"
+else
+sref=$(git config -f .gitmodules --get "submodule.${name}.branch" || true)
+if [[ -n $sref ]]; then
+sref="branch:$sref"
+else
+sref="head"
+fi
+fi
 
-					display_alert "Updating submodule" "${name} - ${surl} - ${sref}" "git"
-					git_ensure_safe_directory "$workdir/$path"
+display_alert "Updating submodule" "${name} - ${surl} - ${sref}" "git"
+git_ensure_safe_directory "$workdir/$path"
 
 					if [[ "${GIT_FIXED_WORKDIR}" != "" ]]; then
 						GIT_FIXED_WORKDIR="${GIT_FIXED_WORKDIR}/${path}" fetch_from_repo "$surl" "$workdir/$path" "$sref"
