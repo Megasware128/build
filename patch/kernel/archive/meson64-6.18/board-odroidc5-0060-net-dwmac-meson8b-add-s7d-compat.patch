@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Copilot <223556219+Copilot@users.noreply.github.com>
+Date: Mon, 25 May 2026 01:06:22 +0200
+Subject: [PATCH 1/2] net: stmmac: dwmac-meson8b: add S7D compatible
+
+S7D uses the AXG-style PRG_ETH register layout in the BSP, so reuse the AXG glue data while exposing an SoC-specific compatible.
+
+Signed-off-by: Copilot <223556219+Copilot@users.noreply.github.com>
+
+diff --git a/Documentation/devicetree/bindings/net/amlogic,meson-dwmac.yaml b/Documentation/devicetree/bindings/net/amlogic,meson-dwmac.yaml
+index 5c91716d1f21..78e454ca5d94 100644
+--- a/Documentation/devicetree/bindings/net/amlogic,meson-dwmac.yaml
++++ b/Documentation/devicetree/bindings/net/amlogic,meson-dwmac.yaml
+@@ -23,6 +23,7 @@ select:
+           - amlogic,meson-gxbb-dwmac
+           - amlogic,meson-axg-dwmac
+           - amlogic,meson-g12a-dwmac
++          - amlogic,s7d-eth-dwmac
+   required:
+     - compatible
+ 
+@@ -38,6 +39,7 @@ allOf:
+               - amlogic,meson-gxbb-dwmac
+               - amlogic,meson-axg-dwmac
+               - amlogic,meson-g12a-dwmac
++              - amlogic,s7d-eth-dwmac
+ 
+     then:
+       properties:
+@@ -93,6 +95,7 @@ allOf:
+               - amlogic,meson8m2-dwmac
+               - amlogic,meson-gxbb-dwmac
+               - amlogic,meson-axg-dwmac
++              - amlogic,s7d-eth-dwmac
+     then:
+       properties:
+         rx-internal-delay-ps:
+@@ -139,9 +142,11 @@ properties:
+           - amlogic,meson-gxbb-dwmac
+           - amlogic,meson-axg-dwmac
+           - amlogic,meson-g12a-dwmac
++          - amlogic,s7d-eth-dwmac
+     contains:
+       enum:
+         - snps,dwmac-3.70a
++        - snps,dwmac-4.00
+         - snps,dwmac
+ 
+   reg:
+diff --git a/drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.c b/drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.c
+index a50782994b97..98b25427112e 100644
+--- a/drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.c
++++ b/drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.c
+@@ -502,6 +502,10 @@ static const struct of_device_id meson8b_dwmac_match[] = {
+ 		.compatible = "amlogic,meson-gxbb-dwmac",
+ 		.data = &meson8b_dwmac_data,
+ 	},
++	{
++		.compatible = "amlogic,s7d-eth-dwmac",
++		.data = &meson_axg_dwmac_data,
++	},
+ 	{
+ 		.compatible = "amlogic,meson-axg-dwmac",
+ 		.data = &meson_axg_dwmac_data,
