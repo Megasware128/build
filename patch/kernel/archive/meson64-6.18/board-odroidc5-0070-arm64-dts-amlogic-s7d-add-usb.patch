@@ -7,8 +7,8 @@ Add the S7D USB2/USB3 PHY register blocks from the BSP dtsi and describe the hos
 
 Signed-off-by: Copilot <223556219+Copilot@users.noreply.github.com>
 ---
- arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi | 79 ++++++++++++++++++++
- 1 file changed, 79 insertions(+)
+ arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi | 71 ++++++++++++++++++++
+ 1 file changed, 71 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi b/arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi
 index 57579a6ab..c4a2c11ea 100644
@@ -24,18 +24,10 @@ index 57579a6ab..c4a2c11ea 100644
  #include <dt-bindings/pinctrl/amlogic,pinctrl.h>
  #include "amlogic-s7d-reset.h"
  
-@@ -218,6 +220,83 @@ eth_rgmii_pins: group-eth-rgmii-pins {
+@@ -218,6 +220,75 @@ eth_rgmii_pins: group-eth-rgmii-pins {
  					};
  				};
  			};
-+
-+			clkc: clock-controller@0 {
-+				compatible = "amlogic,s7d-clkc";
-+				reg = <0x0 0x0 0x0 0x10000>;
-+				clocks = <&xtal>;
-+				clock-names = "xtal";
-+				#clock-cells = <1>;
-+			};
 +
 +			usb2_phy0: phy@35c000 {
 +				compatible = "amlogic,g12a-usb2-phy";
