@@ -304,6 +304,10 @@ function fetch_from_repo() {
 					fi
 
 				done < <(git config -f .gitmodules --get-regexp 'submodule\..*\.path')
+			# Preserve the revision of the repository requested by the caller. Recursive
+			# fetch_from_repo calls for submodules update the same outer-scope variables.
+			checked_out_revision="${fetched_revision}"
+			checked_out_revision_ts="${fetched_revision_ts}"
 			fi
 		fi
 	else
