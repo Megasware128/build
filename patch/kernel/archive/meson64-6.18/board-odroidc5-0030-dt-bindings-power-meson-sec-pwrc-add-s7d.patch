@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: "hongyu.chen1" <hongyu.chen1@amlogic.com>
+Date: Fri, 22 Aug 2025 13:39:55 +0800
+Subject: [PATCH] dt-bindings: power: add Amlogic S6 S7 S7D power domains
+
+Add devicetree binding document for Amlogic S6 S7 S7D secure power
+domains.
+
+(cherry picked from <20250822-pm-s6-s7-s7d-v1-1-82e3f3aff327@amlogic.com>)
+Reviewer fixes:
+- Keep the newly added s6/s7/s7d compatible strings before t7 to maintain
+  alphabetical order, as requested by Krzysztof Kozlowski.
+
+Signed-off-by: hongyu.chen1 <hongyu.chen1@amlogic.com>
+Signed-off-by: Xianwei Zhao <xianwei.zhao@amlogic.com>
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Signed-off-by: Ulf Hansson <ulf.hansson@linaro.org>
+---
+ Documentation/devicetree/bindings/power/amlogic,meson-sec-pwrc.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/power/amlogic,meson-sec-pwrc.yaml b/Documentation/devicetree/bindings/power/amlogic,meson-sec-pwrc.yaml
+--- a/Documentation/devicetree/bindings/power/amlogic,meson-sec-pwrc.yaml
++++ b/Documentation/devicetree/bindings/power/amlogic,meson-sec-pwrc.yaml
+@@ -23,10 +23,10 @@ properties:
+       - amlogic,a4-pwrc
+       - amlogic,a5-pwrc
+       - amlogic,c3-pwrc
+-      - amlogic,t7-pwrc
+       - amlogic,s6-pwrc
+       - amlogic,s7-pwrc
+       - amlogic,s7d-pwrc
++      - amlogic,t7-pwrc
+ 
+   "#power-domain-cells":
+     const: 1
+-- 
+2.43.0
