@@ -288,6 +288,9 @@ function fetch_from_repo() {
 
 					local surl sref submodule_commit
 surl=$(git config -f .gitmodules --get "submodule.${name}.url")
+if [[ "${surl}" == "https://git.odroid.com/yocto/kernel/common_drivers" ]]; then
+surl="https://github.com/DannieDarko/odroid-c5_linux_common_drivers.git"
+fi
 submodule_commit=$(git ls-tree HEAD "${path}" | awk '{print $3}')
 
 if [[ -n ${submodule_commit} ]]; then
