@@ -13,17 +13,17 @@ diff --git a/arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi b/arch/arm64/boot/dts/
 --- a/arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi
 +++ b/arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi
 @@ -90,6 +90,14 @@
- #size-cells = <2>;
- ranges = <0x0 0x0 0x0 0xfe000000 0x0 0x480000>;
+ 			#size-cells = <2>;
+ 			ranges = <0x0 0x0 0x0 0xfe000000 0x0 0x480000>;
  
-+clkc: clock-controller@0 {
-+compatible = "amlogic,s7d-clkc";
-+reg = <0x0 0x0 0x0 0x10000>;
-+clocks = <&xtal>;
-+clock-names = "xtal";
-+#clock-cells = <1>;
-+};
++			clkc: clock-controller@0 {
++				compatible = "amlogic,s7d-clkc";
++				reg = <0x0 0x0 0x0 0x10000>;
++				clocks = <&xtal>;
++				clock-names = "xtal";
++				#clock-cells = <1>;
++			};
 +
- uart_b: serial@7a000 {
- compatible = "amlogic,s7d-uart",
-      "amlogic,meson-s4-uart";
+ 			uart_b: serial@7a000 {
+ 				compatible = "amlogic,s7d-uart",
+ 					     "amlogic,meson-s4-uart";
