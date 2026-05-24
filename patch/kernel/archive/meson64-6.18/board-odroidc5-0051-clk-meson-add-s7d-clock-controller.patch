@@ -1,0 +1,364 @@
+From 720cd80337973d696eecf70571ad3ba2a7c90c0a Mon Sep 17 00:00:00 2001
+From: Copilot <223556219+Copilot@users.noreply.github.com>
+Date: Mon, 25 May 2026 00:53:22 +0200
+Subject: [PATCH] clk: meson: add S7D clock controller
+
+Register layout is derived from CoreELEC U-Boot clk_meson_s7d.c. The driver follows the S4/A4-style clk_regmap patterns and exposes the bring-up-critical GP0 PLL, SD_EMMC A/B/C and ETH_RMII clocks.
+
+SPICC0 and SARADC are modeled from the same table. Unimplemented SD mux parent slots are represented by an internal zero-rate placeholder until HIFI/MPLL coverage is added.
+
+Signed-off-by: Copilot <223556219+Copilot@users.noreply.github.com>
+---
+ drivers/clk/meson/Kconfig   |  14 ++
+ drivers/clk/meson/Makefile  |   1 +
+ drivers/clk/meson/clk-s7d.c | 273 ++++++++++++++++++++++++++++++++++++
+ drivers/clk/meson/clk-s7d.h |  25 ++++
+ 4 files changed, 313 insertions(+)
+ create mode 100644 drivers/clk/meson/clk-s7d.c
+ create mode 100644 drivers/clk/meson/clk-s7d.h
+
+diff --git a/drivers/clk/meson/Kconfig b/drivers/clk/meson/Kconfig
+index 7148160..1ca5027 100644
+--- a/drivers/clk/meson/Kconfig
++++ b/drivers/clk/meson/Kconfig
+@@ -201,4 +201,18 @@ config COMMON_CLK_S4_PERIPHERALS
+ 	help
+ 	  Support for the peripherals clock controller on Amlogic S805X2 and S905Y4
+ 	  devices, AKA S4. Say Y if you want S4 peripherals clock controller to work.
++
++config COMMON_CLK_S7D
++	tristate "S7D SoC clock controller support"
++	depends on ARM64
++	default ARCH_MESON
++	select COMMON_CLK_MESON_CLKC_UTILS
++	select COMMON_CLK_MESON_PLL
++	select COMMON_CLK_MESON_REGMAP
++	help
++	  Support for the clock controller on Amlogic S7D devices.
++	  This currently covers the minimum clocks required for board bring-up.
++	  Say Y if you need SD/eMMC, Ethernet and other basic peripherals.
++	  Hardware validation is still required for complete SoC coverage.
++
+ endmenu
+diff --git a/drivers/clk/meson/Makefile b/drivers/clk/meson/Makefile
+index c6998e7..70d7c4b 100644
+--- a/drivers/clk/meson/Makefile
++++ b/drivers/clk/meson/Makefile
+@@ -26,3 +26,4 @@ obj-$(CONFIG_COMMON_CLK_G12A) += g12a.o g12a-aoclk.o
+ obj-$(CONFIG_COMMON_CLK_MESON8B) += meson8b.o meson8-ddr.o
+ obj-$(CONFIG_COMMON_CLK_S4_PLL) += s4-pll.o
+ obj-$(CONFIG_COMMON_CLK_S4_PERIPHERALS) += s4-peripherals.o
++obj-$(CONFIG_COMMON_CLK_S7D) += clk-s7d.o
+diff --git a/drivers/clk/meson/clk-s7d.c b/drivers/clk/meson/clk-s7d.c
+new file mode 100644
+index 0000000..3da5ccc
+--- /dev/null
++++ b/drivers/clk/meson/clk-s7d.c
+@@ -0,0 +1,273 @@
++// SPDX-License-Identifier: (GPL-2.0-only OR MIT)
++/*
++ * Amlogic S7D Clock Controller Driver
++ *
++ * Register layout derived from CoreELEC U-Boot clk_meson_s7d.c.
++ */
++
++#include <linux/clk-provider.h>
++#include <linux/module.h>
++#include <linux/of_device.h>
++#include <linux/platform_device.h>
++
++#include <dt-bindings/clock/amlogic,s7d-clkc.h>
++
++#include "clk-pll.h"
++#include "clk-regmap.h"
++#include "clk-s7d.h"
++#include "meson-clkc-utils.h"
++
++static struct clk_fixed_factor s7d_xtal = {
++.mult = 1,
++.div = 1,
++.hw.init = &(struct clk_init_data){
++.name = "s7d_xtal",
++.ops = &clk_fixed_factor_ops,
++.parent_data = &(const struct clk_parent_data){ .fw_name = "xtal" },
++.num_parents = 1,
++},
++};
++
++static struct clk_fixed_rate s7d_fixed_pll = {
++.fixed_rate = 2000000000,
++.hw.init = &(struct clk_init_data){
++.name = "fixed_pll",
++.ops = &clk_fixed_rate_ops,
++},
++};
++
++#define S7D_FIXED_FACTOR(_name, _mult, _div) \
++static struct clk_fixed_factor s7d_##_name = { \
++.mult = (_mult), \
++.div = (_div), \
++.hw.init = &(struct clk_init_data){ \
++.name = #_name, \
++.ops = &clk_fixed_factor_ops, \
++.parent_hws = (const struct clk_hw *[]){ &s7d_fixed_pll.hw }, \
++.num_parents = 1, \
++}, \
++}
++
++S7D_FIXED_FACTOR(fclk_div2, 1, 2);
++S7D_FIXED_FACTOR(fclk_div3, 1, 3);
++S7D_FIXED_FACTOR(fclk_div4, 1, 4);
++S7D_FIXED_FACTOR(fclk_div5, 1, 5);
++S7D_FIXED_FACTOR(fclk_div7, 1, 7);
++S7D_FIXED_FACTOR(fclk_div2p5, 2, 5);
++
++static struct clk_fixed_rate s7d_sys_clk = {
++.fixed_rate = 166666666,
++.hw.init = &(struct clk_init_data){
++.name = "sys_clk",
++.ops = &clk_fixed_rate_ops,
++},
++};
++
++static struct clk_fixed_rate s7d_unrealized = {
++.fixed_rate = 0,
++.hw.init = &(struct clk_init_data){
++.name = "s7d_unrealized",
++.ops = &clk_fixed_rate_ops,
++},
++};
++
++static const struct pll_mult_range s7d_gp0_pll_mult_range = {
++.min = 125,
++.max = 250,
++};
++
++static struct clk_regmap s7d_gp0_pll_dco = {
++.data = &(struct meson_clk_pll_data){
++.en = {
++.reg_off = S7D_ANACTRL_GP0PLL_CTRL0,
++.shift = 28,
++.width = 1,
++},
++.m = {
++.reg_off = S7D_ANACTRL_GP0PLL_CTRL0,
++.shift = 0,
++.width = 9,
++},
++.n = {
++.reg_off = S7D_ANACTRL_GP0PLL_CTRL0,
++.shift = 12,
++.width = 3,
++},
++.frac = {
++.reg_off = S7D_ANACTRL_GP0PLL_CTRL1,
++.shift = 0,
++.width = 19,
++},
++.l = {
++.reg_off = S7D_ANACTRL_GP0PLL_STS,
++.shift = 31,
++.width = 1,
++},
++.rst = {
++.reg_off = S7D_ANACTRL_GP0PLL_CTRL0,
++.shift = 29,
++.width = 1,
++},
++.range = &s7d_gp0_pll_mult_range,
++.flags = CLK_MESON_PLL_NOINIT_ENABLED,
++},
++.hw.init = &(struct clk_init_data){
++.name = "gp0_pll_dco",
++.ops = &meson_clk_pll_ops,
++.parent_hws = (const struct clk_hw *[]){ &s7d_xtal.hw },
++.num_parents = 1,
++},
++};
++
++static struct clk_regmap s7d_gp0_pll = {
++.data = &(struct clk_regmap_div_data){
++.offset = S7D_ANACTRL_GP0PLL_CTRL0,
++.shift = 20,
++.width = 3,
++.flags = CLK_DIVIDER_POWER_OF_TWO | CLK_DIVIDER_ROUND_CLOSEST,
++},
++.hw.init = &(struct clk_init_data){
++.name = "gp0_pll",
++.ops = &clk_regmap_divider_ops,
++.parent_hws = (const struct clk_hw *[]){ &s7d_gp0_pll_dco.hw },
++.num_parents = 1,
++.flags = CLK_SET_RATE_PARENT,
++},
++};
++
++static const struct clk_parent_data s7d_sd_emmc_parents[] = {
++{ .hw = &s7d_xtal.hw },
++{ .hw = &s7d_fclk_div2.hw },
++{ .hw = &s7d_fclk_div3.hw },
++{ .hw = &s7d_unrealized.hw },
++{ .hw = &s7d_fclk_div2p5.hw },
++{ .hw = &s7d_unrealized.hw },
++{ .hw = &s7d_unrealized.hw },
++{ .hw = &s7d_gp0_pll.hw },
++};
++
++MESON_COMP_SEL(s7d_, sd_emmc_a, S7D_CLKCTRL_SD_EMMC_CLK_CTRL, 9, 0x7, s7d_sd_emmc_parents, NULL, 0, 0);
++MESON_COMP_DIV(s7d_, sd_emmc_a, S7D_CLKCTRL_SD_EMMC_CLK_CTRL, 0, 7, 0, CLK_SET_RATE_PARENT);
++MESON_COMP_GATE(s7d_, sd_emmc_a, S7D_CLKCTRL_SD_EMMC_CLK_CTRL, 7, CLK_SET_RATE_PARENT);
++
++MESON_COMP_SEL(s7d_, sd_emmc_b, S7D_CLKCTRL_SD_EMMC_CLK_CTRL, 25, 0x7, s7d_sd_emmc_parents, NULL, 0, 0);
++MESON_COMP_DIV(s7d_, sd_emmc_b, S7D_CLKCTRL_SD_EMMC_CLK_CTRL, 16, 7, 0, CLK_SET_RATE_PARENT);
++MESON_COMP_GATE(s7d_, sd_emmc_b, S7D_CLKCTRL_SD_EMMC_CLK_CTRL, 23, CLK_SET_RATE_PARENT);
++
++MESON_COMP_SEL(s7d_, sd_emmc_c, S7D_CLKCTRL_NAND_CLK_CTRL, 9, 0x7, s7d_sd_emmc_parents, NULL, 0, 0);
++MESON_COMP_DIV(s7d_, sd_emmc_c, S7D_CLKCTRL_NAND_CLK_CTRL, 0, 7, 0, CLK_SET_RATE_PARENT);
++MESON_COMP_GATE(s7d_, sd_emmc_c, S7D_CLKCTRL_NAND_CLK_CTRL, 7, CLK_SET_RATE_PARENT);
++
++static struct clk_regmap s7d_eth_rmii_div = {
++.data = &(struct clk_regmap_div_data){
++.offset = S7D_CLKCTRL_ETH_CLK_CTRL,
++.shift = 0,
++.width = 7,
++},
++.hw.init = &(struct clk_init_data){
++.name = "eth_rmii_div",
++.ops = &clk_regmap_divider_ops,
++.parent_hws = (const struct clk_hw *[]){ &s7d_fclk_div2.hw },
++.num_parents = 1,
++.flags = CLK_SET_RATE_PARENT,
++},
++};
++
++static struct clk_regmap s7d_eth_rmii = {
++.data = &(struct clk_regmap_gate_data){
++.offset = S7D_CLKCTRL_ETH_CLK_CTRL,
++.bit_idx = 8,
++},
++.hw.init = &(struct clk_init_data){
++.name = "eth_rmii",
++.ops = &clk_regmap_gate_ops,
++.parent_hws = (const struct clk_hw *[]){ &s7d_eth_rmii_div.hw },
++.num_parents = 1,
++.flags = CLK_SET_RATE_PARENT,
++},
++};
++
++static const struct clk_parent_data s7d_spicc_parents[] = {
++{ .hw = &s7d_xtal.hw },
++{ .hw = &s7d_sys_clk.hw },
++{ .hw = &s7d_fclk_div4.hw },
++{ .hw = &s7d_fclk_div3.hw },
++{ .hw = &s7d_fclk_div2.hw },
++{ .hw = &s7d_fclk_div5.hw },
++{ .hw = &s7d_fclk_div7.hw },
++{ .hw = &s7d_unrealized.hw },
++};
++
++MESON_COMP_SEL(s7d_, spicc_0, S7D_CLKCTRL_SPICC_CLK_CTRL, 7, 0x7, s7d_spicc_parents, NULL, 0, 0);
++MESON_COMP_DIV(s7d_, spicc_0, S7D_CLKCTRL_SPICC_CLK_CTRL, 0, 6, 0, CLK_SET_RATE_PARENT);
++MESON_COMP_GATE(s7d_, spicc_0, S7D_CLKCTRL_SPICC_CLK_CTRL, 6, CLK_SET_RATE_PARENT);
++
++static const struct clk_parent_data s7d_saradc_parents[] = {
++{ .hw = &s7d_xtal.hw },
++{ .hw = &s7d_sys_clk.hw },
++};
++
++MESON_COMP_SEL(s7d_, saradc, S7D_CLKCTRL_SAR_CLK_CTRL, 9, 0x3, s7d_saradc_parents, NULL, 0, 0);
++MESON_COMP_DIV(s7d_, saradc, S7D_CLKCTRL_SAR_CLK_CTRL, 0, 8, 0, CLK_SET_RATE_PARENT);
++MESON_COMP_GATE(s7d_, saradc, S7D_CLKCTRL_SAR_CLK_CTRL, 8, CLK_SET_RATE_PARENT);
++
++static struct clk_hw *s7d_hw_clks[] = {
++[CLKID_XTAL] = &s7d_xtal.hw,
++[CLKID_FIXED_PLL] = &s7d_fixed_pll.hw,
++[CLKID_FCLK_DIV2] = &s7d_fclk_div2.hw,
++[CLKID_FCLK_DIV3] = &s7d_fclk_div3.hw,
++[CLKID_FCLK_DIV4] = &s7d_fclk_div4.hw,
++[CLKID_FCLK_DIV5] = &s7d_fclk_div5.hw,
++[CLKID_FCLK_DIV7] = &s7d_fclk_div7.hw,
++[CLKID_FCLK_DIV2P5] = &s7d_fclk_div2p5.hw,
++[CLKID_SYS_CLK] = &s7d_sys_clk.hw,
++[CLKID_GP0_PLL_DCO] = &s7d_gp0_pll_dco.hw,
++[CLKID_GP0_PLL] = &s7d_gp0_pll.hw,
++[CLKID_SD_EMMC_A_SEL] = &s7d_sd_emmc_a_sel.hw,
++[CLKID_SD_EMMC_A_DIV] = &s7d_sd_emmc_a_div.hw,
++[CLKID_SD_EMMC_A] = &s7d_sd_emmc_a.hw,
++[CLKID_SD_EMMC_B_SEL] = &s7d_sd_emmc_b_sel.hw,
++[CLKID_SD_EMMC_B_DIV] = &s7d_sd_emmc_b_div.hw,
++[CLKID_SD_EMMC_B] = &s7d_sd_emmc_b.hw,
++[CLKID_SD_EMMC_C_SEL] = &s7d_sd_emmc_c_sel.hw,
++[CLKID_SD_EMMC_C_DIV] = &s7d_sd_emmc_c_div.hw,
++[CLKID_SD_EMMC_C] = &s7d_sd_emmc_c.hw,
++[CLKID_ETH_RMII_DIV] = &s7d_eth_rmii_div.hw,
++[CLKID_ETH_RMII] = &s7d_eth_rmii.hw,
++[CLKID_SPICC_0_SEL] = &s7d_spicc_0_sel.hw,
++[CLKID_SPICC_0_DIV] = &s7d_spicc_0_div.hw,
++[CLKID_SPICC_0] = &s7d_spicc_0.hw,
++[CLKID_SARADC_SEL] = &s7d_saradc_sel.hw,
++[CLKID_SARADC_DIV] = &s7d_saradc_div.hw,
++[CLKID_SARADC] = &s7d_saradc.hw,
++};
++
++static const struct meson_clkc_data s7d_clkc_data = {
++.hw_clks = {
++.hws = s7d_hw_clks,
++.num = ARRAY_SIZE(s7d_hw_clks),
++},
++};
++
++static const struct of_device_id s7d_clkc_match_table[] = {
++{
++.compatible = "amlogic,s7d-clkc",
++.data = &s7d_clkc_data,
++},
++{ }
++};
++MODULE_DEVICE_TABLE(of, s7d_clkc_match_table);
++
++static struct platform_driver s7d_clkc_driver = {
++.probe = meson_clkc_mmio_probe,
++.driver = {
++.name = "s7d-clkc",
++.of_match_table = s7d_clkc_match_table,
++},
++};
++module_platform_driver(s7d_clkc_driver);
++
++MODULE_DESCRIPTION("Amlogic S7D Clock Controller driver");
++MODULE_AUTHOR("Copilot <223556219+Copilot@users.noreply.github.com>");
++MODULE_LICENSE("GPL");
++MODULE_IMPORT_NS("CLK_MESON");
+diff --git a/drivers/clk/meson/clk-s7d.h b/drivers/clk/meson/clk-s7d.h
+new file mode 100644
+index 0000000..c7e998f
+--- /dev/null
++++ b/drivers/clk/meson/clk-s7d.h
+@@ -0,0 +1,25 @@
++/* SPDX-License-Identifier: (GPL-2.0-only OR MIT) */
++/*
++ * Amlogic S7D clock controller register offsets.
++ *
++ * Register layout derived from CoreELEC U-Boot clk_meson_s7d.c and
++ * arch-s7d/clock.h.
++ */
++
++#ifndef __MESON_CLK_S7D_H
++#define __MESON_CLK_S7D_H
++
++#define S7D_CLKCTRL_ETH_CLK_CTRL        (0x0059 << 2)
++#define S7D_CLKCTRL_NAND_CLK_CTRL       (0x005a << 2)
++#define S7D_CLKCTRL_SD_EMMC_CLK_CTRL    (0x005b << 2)
++#define S7D_CLKCTRL_SPICC_CLK_CTRL      (0x005d << 2)
++#define S7D_CLKCTRL_SAR_CLK_CTRL        (0x005f << 2)
++
++#define S7D_ANACTRL_GP0PLL_CTRL0        0x8080
++#define S7D_ANACTRL_GP0PLL_CTRL1        0x8084
++#define S7D_ANACTRL_GP0PLL_CTRL2        0x8088
++#define S7D_ANACTRL_GP0PLL_CTRL3        0x808c
++#define S7D_ANACTRL_GP0PLL_CTRL4        0x8090
++#define S7D_ANACTRL_GP0PLL_STS          0x809c
++
++#endif /* __MESON_CLK_S7D_H */
+-- 
+2.43.0
+
