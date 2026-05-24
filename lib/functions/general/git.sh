@@ -264,6 +264,8 @@ function fetch_from_repo() {
 		# should be declared in outer scope: checked_out_revision checked_out_revision_ts
 		checked_out_revision="${fetched_revision}"
 		checked_out_revision_ts="${fetched_revision_ts}"
+		local parent_checked_out_revision="${checked_out_revision}"
+		local parent_checked_out_revision_ts="${checked_out_revision_ts}"
 		display_alert "Fetched revision: checked_out_revision:" "${checked_out_revision}" "git"
 		display_alert "Fetched revision: checked_out_revision_ts:" "${checked_out_revision_ts}" "git"
 
@@ -306,8 +308,8 @@ function fetch_from_repo() {
 				done < <(git config -f .gitmodules --get-regexp 'submodule\..*\.path')
 			# Preserve the revision of the repository requested by the caller. Recursive
 			# fetch_from_repo calls for submodules update the same outer-scope variables.
-			checked_out_revision="${fetched_revision}"
-			checked_out_revision_ts="${fetched_revision_ts}"
+			checked_out_revision="${parent_checked_out_revision}"
+			checked_out_revision_ts="${parent_checked_out_revision_ts}"
 			fi
 		fi
 	else
