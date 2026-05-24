@@ -1,0 +1,75 @@
+From de0d282fcb2a9f32f6384aab8cd9170e7be55a70 Mon Sep 17 00:00:00 2001
+From: Copilot <223556219+Copilot@users.noreply.github.com>
+Date: Mon, 25 May 2026 01:07:51 +0200
+Subject: [PATCH] clk: meson: s7d: expose USB system clock
+
+Expose the SYS_USB gate used by the S7D USB PHY and controller nodes. The gate position matches the BSP s7d-clkc layout.
+
+Signed-off-by: Copilot <223556219+Copilot@users.noreply.github.com>
+---
+ drivers/clk/meson/clk-s7d.c                  | 14 ++++++++++++++
+ drivers/clk/meson/clk-s7d.h                  |  1 +
+ include/dt-bindings/clock/amlogic,s7d-clkc.h |  3 ++-
+ 3 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clk/meson/clk-s7d.c b/drivers/clk/meson/clk-s7d.c
+index 3da5ccc57..44101e3a7 100644
+--- a/drivers/clk/meson/clk-s7d.c
++++ b/drivers/clk/meson/clk-s7d.c
+@@ -211,6 +211,19 @@ MESON_COMP_SEL(s7d_, saradc, S7D_CLKCTRL_SAR_CLK_CTRL, 9, 0x3, s7d_saradc_parent
+ MESON_COMP_DIV(s7d_, saradc, S7D_CLKCTRL_SAR_CLK_CTRL, 0, 8, 0, CLK_SET_RATE_PARENT);
+ MESON_COMP_GATE(s7d_, saradc, S7D_CLKCTRL_SAR_CLK_CTRL, 8, CLK_SET_RATE_PARENT);
+ 
++static struct clk_regmap s7d_sys_usb = {
++.data = &(struct clk_regmap_gate_data){
++.offset = S7D_CLKCTRL_SYS_CLK_EN0_REG1,
++.bit_idx = 26,
++},
++.hw.init = &(struct clk_init_data){
++.name = "sys_usb",
++.ops = &clk_regmap_gate_ops,
++.parent_hws = (const struct clk_hw *[]){ &s7d_sys_clk.hw },
++.num_parents = 1,
++},
++};
++
+ static struct clk_hw *s7d_hw_clks[] = {
+ [CLKID_XTAL] = &s7d_xtal.hw,
+ [CLKID_FIXED_PLL] = &s7d_fixed_pll.hw,
+@@ -240,6 +253,7 @@ static struct clk_hw *s7d_hw_clks[] = {
+ [CLKID_SARADC_SEL] = &s7d_saradc_sel.hw,
+ [CLKID_SARADC_DIV] = &s7d_saradc_div.hw,
+ [CLKID_SARADC] = &s7d_saradc.hw,
++[CLKID_SYS_USB] = &s7d_sys_usb.hw,
+ };
+ 
+ static const struct meson_clkc_data s7d_clkc_data = {
+diff --git a/drivers/clk/meson/clk-s7d.h b/drivers/clk/meson/clk-s7d.h
+index c7e998f3f..a76aa995f 100644
+--- a/drivers/clk/meson/clk-s7d.h
++++ b/drivers/clk/meson/clk-s7d.h
+@@ -13,6 +13,7 @@
+ #define S7D_CLKCTRL_NAND_CLK_CTRL       (0x005a << 2)
+ #define S7D_CLKCTRL_SD_EMMC_CLK_CTRL    (0x005b << 2)
+ #define S7D_CLKCTRL_SPICC_CLK_CTRL      (0x005d << 2)
++#define S7D_CLKCTRL_SYS_CLK_EN0_REG1   (0x0012 << 2)
+ #define S7D_CLKCTRL_SAR_CLK_CTRL        (0x005f << 2)
+ 
+ #define S7D_ANACTRL_GP0PLL_CTRL0        0x8080
+diff --git a/include/dt-bindings/clock/amlogic,s7d-clkc.h b/include/dt-bindings/clock/amlogic,s7d-clkc.h
+index 913c48cdf..dd3e868c9 100644
+--- a/include/dt-bindings/clock/amlogic,s7d-clkc.h
++++ b/include/dt-bindings/clock/amlogic,s7d-clkc.h
+@@ -35,7 +35,8 @@
+ #define CLKID_SARADC_SEL       25
+ #define CLKID_SARADC_DIV       26
+ #define CLKID_SARADC           27
++#define CLKID_SYS_USB          28
+ 
+-#define CLKID_NR_CLKS          28
++#define CLKID_NR_CLKS          29
+ 
+ #endif /* __DT_BINDINGS_CLOCK_AMLOGIC_S7D_CLKC_H */
+-- 
+2.43.0
+
