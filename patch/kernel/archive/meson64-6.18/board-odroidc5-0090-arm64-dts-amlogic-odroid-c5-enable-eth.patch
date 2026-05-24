@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Copilot <223556219+Copilot@users.noreply.github.com>
+Date: Sun, 24 May 2026 00:00:00 +0000
+Subject: [PATCH] arm64: dts: amlogic: odroid-c5: enable Ethernet
+
+Enable the S7D DesignWare Ethernet MAC on ODROID-C5, mux the RGMII
+pins, and describe the onboard Realtek RTL8211F PHY on the MAC MDIO bus.
+The PHY ID and reset timing match the Hardkernel S7D ODROID-C5 BSP.
+
+Signed-off-by: Copilot <223556219+Copilot@users.noreply.github.com>
+---
+diff --git a/arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts b/arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts
+index 0000000..0000000 100644
+--- a/arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts
++++ b/arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts
+@@ -33,3 +33,21 @@
+ &uart_b {
+ 	status = "okay";
+ };
++
++&ethmac {
++	status = "okay";
++	pinctrl-0 = <&eth_rgmii_pins>, <&eth_pins>;
++	pinctrl-names = "default";
++	phy-mode = "rgmii";
++	phy-handle = <&external_phy>;
++	snps,reset-gpio = <&gpioh 9 GPIO_ACTIVE_LOW>;
++	snps,reset-delays-us = <0 10000 30000>;
++};
++
++&mdio0 {
++	external_phy: ethernet-phy@0 {
++		compatible = "ethernet-phy-id001c.c916";
++		reg = <0>;
++		max-speed = <1000>;
++	};
++};
