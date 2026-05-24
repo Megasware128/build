@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Copilot <223556219+Copilot@users.noreply.github.com>
+Date: Sun, 24 May 2026 00:00:00 +0000
+Subject: [PATCH] arm64: dts: amlogic: add S7D Ethernet pinmux groups
+
+Add S7D Ethernet pinmux groups used by the DesignWare MAC and
+external RGMII PHY on ODROID-C5. The pin assignments match the
+Hardkernel S7D BSP pinctrl tables: MDC on GPIOH_11 function 4,
+MDIO and the RGMII data/control pins on GPIOZ_0..12 function 6.
+
+Signed-off-by: Copilot <223556219+Copilot@users.noreply.github.com>
+---
+--- a/arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi
++++ b/arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi
+@@ -183,6 +183,32 @@
+ 					#gpio-cells = <2>;
+ 					gpio-ranges = <&periphs_pinctrl 0 (AMLOGIC_GPIO_CC<<8) 2>;
+ 				};
++
++				func-eth {
++					eth_pins: group-eth-pins {
++						pinmux = <AML_PINMUX(AMLOGIC_GPIO_H, 11, 4)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 0, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 1, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 2, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 3, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 7, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 8, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 9, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 12, 6)>;
++						drive-strength-microamp = <4000>;
++						bias-disable;
++					};
++
++					eth_rgmii_pins: group-eth-rgmii-pins {
++						pinmux = <AML_PINMUX(AMLOGIC_GPIO_Z, 4, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 5, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 6, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 10, 6)>,
++							 <AML_PINMUX(AMLOGIC_GPIO_Z, 11, 6)>;
++						drive-strength-microamp = <4000>;
++						bias-disable;
++					};
++				};
+ 			};
+ 		};
+ 	};
