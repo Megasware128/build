@@ -60,7 +60,7 @@ function compile_uboot_target() {
 	else
 		cross_compile="CROSS_COMPILE='${UBOOT_COMPILER}'"
 	fi
-
+	
 	if [[ "${SHOW_DEBUG}" == "yes" ]]; then
 		display_alert "${uboot_prefix}Listing contents of u-boot directory" "'${version}' '${target_make}' before patching" "debug"
 		run_host_command_logged "ls -laht"
@@ -198,7 +198,12 @@ function compile_uboot_target() {
 		)
 	fi
 
-	# Hook time, for extra post-processing
+	if [[ "${BOOTSOURCE}" == "https://git.odroid.com/yocto/uboot" && -f build/.config ]]; then
+rm -f .config
+rm -rf include/config include/generated
+fi
+
+# Hook time, for extra post-processing
 	call_extension_method "post_config_uboot_target" <<- 'POST_CONFIG_UBOOT_TARGET'
 		*allow extensions prepare after configuring but before compiling an u-boot target*
 		Some u-boot targets require extra configuration or pre-processing before compiling.

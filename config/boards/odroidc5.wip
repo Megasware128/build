@@ -27,9 +27,11 @@
 #   • GPIO:            ⧐ Pending (pinctrl + generic gpio sysfs)
 #
 # Strategy:
-#   This board uses Track A: Amlogic GKI Linux 6.6 BSP kernel from DannieDarko/odroid-c5_linux_common_drivers
-#   (mirror of Amlogic + Hardkernel downstream). Inherits meson-s7d family config (see armbian-board-patches SKILL).
-#   All peripheral drivers + DTS patches live under patch/kernel/archive/meson-s7d-6.6/.
+#   This board uses Track A: Amlogic Linux 5.15 BSP kernel from DannieDarko/odroid-c5_linux
+#   (full tree; common_drivers + media_modules are git submodules, auto-initialised by the
+#   meson-s7d family fetch_sources_tools hook). Inherits meson-s7d family config (see
+#   armbian-board-patches SKILL). Peripheral drivers + DTS patches live under
+#   patch/kernel/archive/meson-s7d-5.15/.
 #
 # Requirements (before first build):
 #   1. Phase 0: Capture vendor-baseline from official Hardkernel Ubuntu 24.04 image

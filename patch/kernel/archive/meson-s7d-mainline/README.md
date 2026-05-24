@@ -115,7 +115,7 @@ Each patch is tested via:
 
 ## Related Tracks
 
-- **Track A (BSP):** Uses vendor Amlogic GKI kernel v6.6 with full BSP DTS/drivers; faster hardware bring-up, slower to upstream.
+- **Track A (BSP):** Uses vendor Amlogic 5.15 BSP kernel with full BSP DTS/drivers; faster hardware bring-up, slower to upstream.
 - **Track B (Mainline):** This track; slower hardware bring-up (DTS/driver porting), faster path to upstream sustainability.
 
 Both tracks run in parallel. Learnings from Track A (pin mappings, clocking, power domains) inform Track B's DTS authoring.

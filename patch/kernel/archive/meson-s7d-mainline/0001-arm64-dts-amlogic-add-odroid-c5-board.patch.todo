@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+Date: <TBD:date of first submission>
+Subject: [PATCH] arm64: dts: amlogic: add ODROID-C5 board device tree
+
+# STATUS: Skeleton — needs vendor-baseline filled and compatible strings validated
+#
+# This patch adds the device tree for Hardkernel ODROID-C5, powered by
+# the Amlogic S905X5M (S7D) SoC. Initial version includes UART and memory
+# support only; peripheral nodes are added in follow-up patches.
+#
+# TBD items marked below must be filled from vendor-baseline:
+#   - compatible array: read from /proc/device-tree/compatible on official image
+#   - memory size: confirm via /proc/device-tree/memory@0/reg
+#   - UART node: cross-check device type and interrupt from vendor DTS
+#
+# Tested on: Hardkernel ODROID-C5 (Amlogic S905X5M), <TBD:firmware version>
+
+Signed-off-by: Megasware128 <megasware128@example.com>
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+---
+ arch/arm64/boot/dts/amlogic/Makefile               |  1 +
+ .../amlogic-s7d-s905x5m-odroidc5.dts               | 32 ++++++++++++++++++++++
+ 2 files changed, 33 insertions(+)
+ create mode 100644 arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts
+
+diff --git a/arch/arm64/boot/dts/amlogic/Makefile b/arch/arm64/boot/dts/amlogic/Makefile
+index 0000000..1111111 100644
+--- a/arch/arm64/boot/dts/amlogic/Makefile
++++ b/arch/arm64/boot/dts/amlogic/Makefile
+@@ -36,6 +36,7 @@ dtb-$(CONFIG_ARCH_MESON) += meson-sm1-khadas-vim3.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-sm1-kvim.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-sm1-sei510.dtb
+ dtb-$(CONFIG_ARCH_MESON) += meson-s7d-s905x5m-bm202.dtb
++dtb-$(CONFIG_ARCH_MESON) += meson-s7d-s905x5m-odroidc5.dtb
+ 
+ obj-y += overlays/
+diff --git a/arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts b/arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts
+new file mode 100644
+index 0000000..2222222
+--- /dev/null
++++ b/arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-odroidc5.dts
+@@ -0,0 +1,32 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * Device tree for Hardkernel ODROID-C5
++ * Copyright (C) 2025 Hardkernel Co., Ltd.
++ *
++ * Based on Amlogic S905X5M (S7D) SoC reference.
++ * UART and memory bring-up only; peripherals added in follow-up patches.
++ */
++
++/dts-v1/;
++#include "amlogic-s7d.dtsi"
++
++/ {
++	model = "Hardkernel ODROID-C5";
++	compatible = "s7d_s905x5m_bm201";
++
++	aliases {
++		serial0 = &uart_ao;
++	};
++
++	chosen {
++		stdout-path = "serial0:115200n8";
++	};
++
++	memory@0 {
++		device_type = "memory";
++		reg = <0x0 0x0 0x0 0xf0000000>;
++	};
++};
++
++&uart_ao {
++	status = "okay";
++};

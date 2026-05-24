@@ -1,7 +1,7 @@
 # STATUS: draft — needs vendor-baseline + BSP source analysis
 
 ## Goal
-Port USB 2.0 PHY + DWC2 device controller support from Amlogic GKI 6.6 BSP into mainline. S905X5M/S7D has 4× USB 2.0 Type-A ports (no USB 3.0). Identify PHY glue layer changes vs SM1, USB hub topology.
+Port USB 2.0 PHY + DWC2 device controller support from Amlogic 5.15 BSP into mainline. S905X5M/S7D has 4× USB 2.0 Type-A ports (no USB 3.0). Identify PHY glue layer changes vs SM1, USB hub topology.
 
 ## BSP source to diff against
 ```

@@ -1,7 +1,7 @@
 # STATUS: draft — needs vendor-baseline + BSP source analysis
 
 ## Goal
-Port Ethernet (stmmac DWMAC) controller support from Amlogic GKI 6.6 BSP into mainline. S905X5M/S7D has 1× GbE RGMII interface (likely RTL8211F-CG PHY). Identify glue layer differences vs SM1 variant.
+Port Ethernet (stmmac DWMAC) controller support from Amlogic 5.15 BSP into mainline. S905X5M/S7D has 1× GbE RGMII interface (likely RTL8211F-CG PHY). Identify glue layer differences vs SM1 variant.
 
 ## BSP source to diff against
 ```

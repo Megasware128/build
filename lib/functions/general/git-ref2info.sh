@@ -169,6 +169,20 @@ function memoized_git_ref_to_info() {
 					url="${gitlab_path}/-/raw/${sha1}/Makefile"
 					;;
 
+"https://git.odroid.com/"*)
+makefile_url="git:${git_source}:${sha1}:Makefile"
+display_alert "Fetching Makefile via git" "${makefile_url}" "debug"
+declare cache_dir="${SRC:-${PWD}}/.tmp/git-ref2info-makefile-${sha1}"
+rm -rf "${cache_dir}"
+mkdir -p "${cache_dir}"
+git -C "${cache_dir}" init -q
+git -C "${cache_dir}" fetch --depth=1 "${git_source}" "${sha1}" >/dev/null
+makefile_body="$(git -C "${cache_dir}" show FETCH_HEAD:Makefile)"
+rm -rf "${cache_dir}"
+parse_makefile_version "${makefile_body}"
+return 0
+;;
+
 				*)
 					exit_with_error "Unknown git source '${git_source}'"
 					;;

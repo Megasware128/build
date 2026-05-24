@@ -2,7 +2,11 @@
 
 ## Summary
 
-Amlogic platforms (including ODROID-C5 with S905X5M) typically write the bootloader (BL2/SPL) to **sector 1**, NOT sector 8192.
+Amlogic platforms (including ODROID-C5 with S905X5M) write the flashable bootloader image to **sector 1**, NOT sector 8192.
+
+Confirmed evidence:
+- CoreELEC ODROID-C5 image has Amlogic boot markers in the first sectors (`@AMLBOOT` in sector 0, `@ML` at sector 1).
+- Official ODROID-C5 Yocto WIC metadata (`mdrjr/meta-odroid-aml`, `wic/odroid-c5.wks`) uses `part --source rawcopy --sourceparams="file=u-boot.bin.signed" --offset 1S`.
 
 This is **critical** for:
 - `UBOOT_TARGET_MAP` offset calculation
@@ -53,7 +57,7 @@ dd if=${UBOOT_TARGET_MAP%:*} of=${uboot_name}/u-boot.bin bs=1 status=none
 dd if=${uboot_name}/u-boot.bin of=IMAGE.img bs=512 seek=1 status=none
 ```
 
-**Key offset:** `seek=1` (sector 1, not 8192 as in some ARM platforms).
+**Key offset:** `seek=1` (sector 1, not 8192 as in some ARM platforms). This is now confirmed by CoreELEC ODROID-C5 image inspection and official ODROID-C5 Yocto WIC metadata.
 
 ---
 
@@ -63,6 +67,6 @@ In the comprehensive ODROID-C5 research report, the vendor baseline capture step
 
 ---
 
-## TBD Markers
+## Vendor Baseline Status
 
-- `vendor-baseline blocked` — Official Hardkernel image download returned a Cloudflare challenge, so sector-level `@AML` confirmation could not be captured without a browser/session cookie. Keep expected `seek=1` until validated from an image or board dump.
+- `vendor-baseline done` — Official Hardkernel Ubuntu image URLs remain blocked/unlisted, but a CoreELEC ODROID-C5 image and official ODROID-C5 Yocto WIC metadata confirm the sector-1 bootloader write offset. See `research/vendor-baseline-c5.md` for hashes, partition table, DTB, and bootargs.

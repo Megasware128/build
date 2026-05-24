@@ -38,14 +38,14 @@ Container validation of Hardkernel `u-boot` branch `odroidc5-v2023.01` shows tha
    - Not proven by compile-only validation. The U-Boot tree includes `cmd/pxe.o` and `cmd/sysboot.o` in the successful BL33 build, so extlinux support appears compiled in, but hardware boot/UART validation is still required.
 
 5. **Bootloader write offset**
-   - Not proven by compile-only validation. Keep sector-1 as the working assumption until verified against a Hardkernel-flashed image with `fdisk`/`dd`.
+   - Confirmed `seek=1` / sector-1 placement for the flashable Amlogic boot image. Evidence: CoreELEC ODROID-C5 image has Amlogic boot markers in the first sectors and official ODROID-C5 Yocto WIC metadata uses `--offset 1S` for `u-boot.bin.signed`.
 
 ### Phase 1 Output Deliverables
 
 - ✅ **Standalone BL33 U-Boot build** of `s7d_odroidc5_defconfig` on Ubuntu 24.04 container succeeds.
 - ⏳ **Full FIP flashable image packaging** is partial/blocked at BL30 RTOS SDK setup.
 - ⏳ **Boot log capture** from flashed U-Boot on hardware is still required.
-- ⏳ **Hardkernel vendor-baseline capture** remains required for `fdisk`, DTB filename, and compatibility details.
+- ✅ **Vendor baseline retry** captured partition table, DTB, bootargs, and sector-1 bootloader evidence from a CoreELEC ODROID-C5 image plus official Yocto metadata.
 
 ---
 

@@ -14,7 +14,7 @@
 #   2. You make changes (edit DTS, drivers, etc.)
 #   3. git add + git commit per logical change
 #   4. Exit the session — patches are exported to output/patch/ and userpatches/
-#   5. Move patches to patch/kernel/archive/meson-s7d-6.6/ for upstream inclusion
+#   5. Move patches to patch/kernel/archive/meson-s7d-5.15/ for upstream inclusion
 #
 # Naming convention:
 #   NNNN-<short-kebab-subject>.patch
