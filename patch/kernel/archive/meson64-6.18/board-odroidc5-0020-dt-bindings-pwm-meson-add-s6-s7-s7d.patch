@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Junyi Zhao <junyi.zhao@amlogic.com>
+Date: Thu, 21 May 2026 08:26:58 +0000
+Subject: [PATCH] dt-bindings: pwm: amlogic: Add new bindings for S6 S7 S7D
+
+Amlogic S7/S7D/S6 different from the previous SoCs, a controller
+includes one pwm, at the same time, the controller has only one
+input clock source.
+
+Signed-off-by: Junyi Zhao <junyi.zhao@amlogic.com>
+Reviewed-by: Krzysztof Kozlowski <krzysztof.kozlowski@oss.qualcomm.com>
+Reviewed-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Signed-off-by: Xianwei Zhao <xianwei.zhao@amlogic.com>
+(cherry picked from <20260521-s6-s7-pwm-v3-1-57b073fbafef@amlogic.com>)
+---
+ Documentation/devicetree/bindings/pwm/pwm-amlogic.yaml | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/pwm/pwm-amlogic.yaml b/Documentation/devicetree/bindings/pwm/pwm-amlogic.yaml
+index c337d85da40f..93fa97f4011b 100644
+--- a/Documentation/devicetree/bindings/pwm/pwm-amlogic.yaml
++++ b/Documentation/devicetree/bindings/pwm/pwm-amlogic.yaml
+@@ -37,11 +37,17 @@
+       - enum:
+           - amlogic,meson8-pwm-v2
+           - amlogic,meson-s4-pwm
++          - amlogic,s7-pwm
+       - items:
+           - enum:
+               - amlogic,c3-pwm
+               - amlogic,meson-a1-pwm
+           - const: amlogic,meson-s4-pwm
++      - items:
++          - enum:
++              - amlogic,s6-pwm
++              - amlogic,s7d-pwm
++          - const: amlogic,s7-pwm
+       - items:
+           - enum:
+               - amlogic,meson8b-pwm-v2
+@@ -140,6 +146,20 @@
+           items:
+             - description: input clock of PWM channel A
+             - description: input clock of PWM channel B
++        clock-names: false
++      required:
++        - clocks
++
++  - if:
++      properties:
++        compatible:
++          contains:
++            enum:
++              - amlogic,s7-pwm
++    then:
++      properties:
++        clocks:
++          maxItems: 1
+         clock-names: false
+       required:
+         - clocks
+
