@@ -1,0 +1,33 @@
+From 4ec5fcf325361d9d705106e587aabc2939019724 Mon Sep 17 00:00:00 2001
+From: Xianwei Zhao <xianwei.zhao@amlogic.com>
+Date: Tue, 23 Dec 2025 05:37:09 +0000
+Subject: [PATCH] dt-bindings: reset: Add compatible for Amlogic S6/S7/S7D
+
+Add compatibles for Amlogic S6/S7/S7D reset controllers,
+which fall back to 'amlogic,meson-s4-reset'.
+
+Acked-by: Conor Dooley <conor.dooley@microchip.com>
+Reviewed-by: Martin Blumenstingl <martin.blumenstingl@googlemail.com>
+Signed-off-by: Xianwei Zhao <xianwei.zhao@amlogic.com>
+(cherry picked from message-id <20251223-reset-s6-s7-s7d-v2-1-958f341449f1@amlogic.com>)
+---
+ .../devicetree/bindings/reset/amlogic,meson-reset.yaml         | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/reset/amlogic,meson-reset.yaml b/Documentation/devicetree/bindings/reset/amlogic,meson-reset.yaml
+index 150e95c0d9be..ab0239cf16e5 100644
+--- a/Documentation/devicetree/bindings/reset/amlogic,meson-reset.yaml
++++ b/Documentation/devicetree/bindings/reset/amlogic,meson-reset.yaml
+@@ -25,6 +25,9 @@ properties:
+           - enum:
+               - amlogic,a4-reset
+               - amlogic,a5-reset
++              - amlogic,s6-reset
++              - amlogic,s7-reset
++              - amlogic,s7d-reset
+           - const: amlogic,meson-s4-reset
+ 
+   reg:
+-- 
+2.43.0
+
