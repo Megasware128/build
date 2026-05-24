@@ -27,8 +27,9 @@ Patches follow standard Linux kernel submission format (`git format-patch`):
 ### Phase 3a — ODROID-C5 Board DTS (skeleton)
 **File:** `0001-arm64-dts-amlogic-add-odroid-c5-board.patch`
 
-Initial board DTS with UART and memory only. Requires:
-- `<TBD:vendor-baseline>` — read `/proc/device-tree/compatible` from official Hardkernel image to fill `compatible` array
+Initial board DTS with UART and memory only. Baseline values currently use Hardkernel vendor sources because the official image download was blocked by Cloudflare during image-only capture:
+- BSP top-level `compatible`: `"s7d_s905x5m_bm201"`
+- BSP DT memory reservation: `linux,usable-memory = <0x0 0x0 0x0 0xf0000000>`
 - SoC stub (`amlogic-s7d.dtsi`) already in mainline
 
 ### Phase 3b — SoC Peripheral Expansion

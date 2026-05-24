@@ -44,15 +44,15 @@ BOARDFAMILY="meson-s7d"
 BOARD_MAINTAINER="Megasware128"
 INTRODUCED="2025"
 
-# U-Boot defconfig
-BOOTCONFIG="<TBD:vendor-baseline confirm exact defconfig name via 'ls configs/' in hardkernel/u-boot odroidc5-v2023.01 branch. Likely 'odroidc5_defconfig' or variant>"
+# U-Boot defconfig (Hardkernel BL33 path: bl33/v2023/configs/amlogic/s7d_odroidc5_defconfig)
+BOOTCONFIG="s7d_odroidc5_defconfig"
 
 # Kernel targets
 KERNEL_TARGET="current"
 KERNEL_TEST_TARGET="current"
 
-# Device tree blob
-BOOT_FDT_FILE="amlogic/<TBD:vendor-baseline DTB filename from /boot of official Hardkernel Ubuntu image. Likely 's7d_s905x5m_odroidc5.dtb' or similar. Confirm via: 'ls /boot/dtbs/*/amlogic/' on running official image>"
+# Device tree blob (vendor kernel arch/arm64/boot/dts/amlogic/Makefile)
+BOOT_FDT_FILE="amlogic/s7d_s905x5m_odroidc5.dtb"
 
 # SoC identifier
 BOOT_SOC="s905x5m"

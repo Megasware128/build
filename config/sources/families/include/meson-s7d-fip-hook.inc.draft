@@ -4,25 +4,34 @@
 
 function post_uboot_custom_postprocess__odroidc5_amlogic_fip() {
     display_alert "Packaging Amlogic FIP for ODROID-C5" "$BOARD" "info"
-    
-    # <TBD:phase-1-uboot-validation>
-    # Phase 1 must confirm:
-    # - Location and format of BL2/BL30/BL31/BL32/BL33 blobs (LibreELEC amlogic-boot-fip or embedded in source?)
-    # - Whether aml_encrypt tool is required for FIP packaging
-    # - Final u-boot.bin.sd.bin location and naming convention
-    # - Whether Amlogic fip/build.sh or fip/build.py exists and can be invoked
-    # - Whether BL33 (final bootloader) is compatible with Armbian extlinux/bootscript flow
-    
-    # Sketch of FIP build (awaiting Phase 1 validation):
-    # 1. cd "${BOOTSOURCEDIR}"
-    # 2. Ensure BL2/BL30/BL31 blobs are in place (bl2.bin, bl30.bin, bl31.bin, etc.)
-    # 3. Invoke hardkernel/u-boot fip/build.sh or equivalent
-    #    Example: ./fip/build.sh || python3 fip/build.py
-    # 4. Verify final artifact exists: ${BOOTSOURCEDIR}/fip/build/u-boot.bin (or u-boot.bin.sd.bin)
-    # 5. Copy to ${uboot_name}:
-    #    cp fip/build/u-boot.bin ${uboot_name}/u-boot.bin
-    #    OR: cp u-boot.bin.sd.bin ${uboot_name}/u-boot.bin
-    # 6. Return 0 (success) or 1 (failure for build to abort)
-    
-    return 0
+
+    # Hardkernel odroidc5-v2023.01 is a firmware superproject:
+    # - BL33 U-Boot: bl33/v2023, defconfig s7d_odroidc5_defconfig
+    # - FIP tooling: ./mk -> fip/mk_script.sh
+    # - Vendored blobs/tools: bl2/bin/s7d/s905x5m, bl31/bl31_2.7/bin/s7d/s905x5m,
+    #   bl32/bl32_3.18/bin/s7d/s905x5m, bl40/bin/s7d/s905x5m,
+    #   soc/templates/s7d/s905x5m, fip/s7d/aml_encrypt_s7d, fip/s7d/binary-tool/acpu-imagetool.
+    # Validated partial flow:
+    #   cd "${BOOTSOURCEDIR}"
+    #   git submodule update --init --recursive
+    #   ARCH=arm64 CROSS_COMPILE="${CROSS_COMPILE:-aarch64-linux-gnu-}" ./mk s7d_odroidc5 --disable-bl33z
+    # Expected final flashable artifact after successful FIP packaging: build/u-boot.bin.
+    # Current blocker: BL30 is built from the RTOS SDK and requires cmake plus the SDK
+    # compiler environment (scripts/env.sh / likely RISC-V toolchain) or a matching prebuilt bl30.bin.
+
+    if [[ -x "${BOOTSOURCEDIR}/mk" ]]; then
+        (
+            cd "${BOOTSOURCEDIR}" || exit 1
+            git submodule update --init --recursive
+            ARCH=arm64 CROSS_COMPILE="${CROSS_COMPILE:-aarch64-linux-gnu-}" ./mk s7d_odroidc5 --disable-bl33z
+        )
+    fi
+
+    if [[ -s "${BOOTSOURCEDIR}/build/u-boot.bin" ]]; then
+        cp -v "${BOOTSOURCEDIR}/build/u-boot.bin" "${uboot_name}/u-boot.bin"
+        return 0
+    fi
+
+    display_alert "ODROID-C5 FIP packaging did not produce build/u-boot.bin" "BL30 RTOS SDK setup still required" "wrn"
+    return 1
 }

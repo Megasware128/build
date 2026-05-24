@@ -54,7 +54,7 @@ index 0000000..2222222
 +
 +/ {
 +	model = "Hardkernel ODROID-C5";
-+	compatible = "<TBD:vendor-baseline read from /proc/device-tree/compatible>";
++	compatible = "s7d_s905x5m_bm201";
 +
 +	aliases {
 +		serial0 = &uart_ao;
@@ -66,7 +66,7 @@ index 0000000..2222222
 +
 +	memory@0 {
 +		device_type = "memory";
-+		reg = "<TBD:vendor-baseline: memory size from /proc/device-tree/memory@0/reg>";
++		reg = <0x0 0x0 0x0 0xf0000000>;
 +	};
 +};
 +

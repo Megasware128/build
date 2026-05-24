@@ -14,48 +14,38 @@ See `.github/skills/armbian-board-patches/SKILL.md` § 5 for CLI usage and overr
 
 ---
 
-## ⚠️ Research-Blocked: Phase 1 Validation Required
+## Phase 1 Standalone Build Findings
 
-**DO NOT author patches until Phase 1 standalone U-Boot validation is complete.** The Amlogic multi-stage firmware (FIP) flow — BL2/BL30/BL31/BL32/BL33 + `aml_encrypt` + LibreELEC `amlogic-boot-fip` blobs — is not yet proven to integrate cleanly with Armbian's standard `post_uboot_custom_postprocess` hook flow.
+Container validation of Hardkernel `u-boot` branch `odroidc5-v2023.01` shows that the GitHub repository is a firmware superproject. The buildable BL33 U-Boot tree is the `bl33/v2023` submodule; firmware/FIP inputs are other submodules.
 
-### Phase 1 Validation Checklist
-
-**Before any patch authoring, Phase 1 must answer:**
+### Phase 1 Validation Answers
 
 1. **defconfig discovery**
-   - Does `odroidc5_defconfig` exist in `hardkernel/u-boot` `odroidc5-v2023.01` branch?
-   - If not, which defconfig is the base (e.g., `meson64_defconfig`)?
-   - Can Armbian's `BOOTCONFIG` variable point to it, or does it require a custom override patch?
+   - `odroidc5_defconfig` does **not** exist.
+   - The ODROID-C5 defconfig is `s7d_odroidc5_defconfig`, stored at `bl33/v2023/configs/amlogic/s7d_odroidc5_defconfig`.
+   - Configure from `bl33/v2023` with `make s7d_odroidc5_defconfig` (not `make amlogic/s7d_odroidc5_defconfig`; this tree prepends `configs/amlogic/`).
 
 2. **Final boot artifact format**
-   - What is the **actual final U-Boot binary name** that gets written to sector 1 of the SD/eMMC?
-   - Examples observed in Amlogic: `u-boot.bin.sd.bin`, `fip/build/u-boot.bin`, custom post-processed FIP package?
-   - This name must match Armbian's `UBOOT_TARGET_MAP` string (e.g., `u-boot.bin.sd.bin:u-boot.bin`).
+   - Standalone BL33 compile succeeds and emits `bl33/v2023/build/u-boot.bin` (1,805,712 bytes in the validated container run).
+   - This is **not** the flashable SD/eMMC bootloader; it is BL33 input to Amlogic FIP packaging.
+   - Hardkernel's FIP flow is expected to copy the final flashable image to top-level `build/u-boot.bin` after `./mk s7d_odroidc5 ...` completes.
 
 3. **Required blobs & tools**
-   - Does the Hardkernel build require **LibreELEC's `amlogic-boot-fip`** prebuilt package (BL2/BL30 bins)?
-   - Does it require **`aml_encrypt` binary** (Amlogic proprietary encryption tool)?
-   - Can these be sourced as part of the U-Boot source tree, or are they external?
-   - Does Armbian's build pipeline have precedent for integrating them?
+   - Required blobs/tools are vendored as submodules, not LibreELEC `amlogic-boot-fip`: `bl2/bin/s7d/s905x5m/*`, `bl31/bl31_2.7/bin/s7d/s905x5m/*`, `bl32/bl32_3.18/bin/s7d/s905x5m/*`, `bl40/bin/s7d/s905x5m/*`, `soc/templates/s7d/s905x5m/*`, and `fip/s7d/aml_encrypt_s7d`/`fip/s7d/binary-tool/acpu-imagetool`.
+   - Full `./mk s7d_odroidc5 --disable-bl33z` packaging remains partial: it reaches BL30, then fails because BL30 is built from the RTOS SDK and needs extra setup (`cmake`, RTOS SDK compiler environment via `scripts/env.sh`, and likely a RISC-V toolchain) or a matching prebuilt `bl30.bin`.
 
 4. **Boot flow compatibility**
-   - Does `odroidc5-v2023.01` expect to load a **custom `boot.scr`** (Hardkernel proprietary), or can Armbian's standard **extlinux + `/boot/extlinux/extlinux.conf`** boot flow work?
-   - If extlinux does NOT work, what custom bootscript is required, and can it be authored as a patch?
+   - Not proven by compile-only validation. The U-Boot tree includes `cmd/pxe.o` and `cmd/sysboot.o` in the successful BL33 build, so extlinux support appears compiled in, but hardware boot/UART validation is still required.
 
 5. **Bootloader write offset**
-   - On official ODROID-C5 images, at what **sector** does BL2 (SPL) start?
-   - Expected: **sector 1** (not 8192). Verify with `fdisk -l /dev/mmcblk0` on a Hardkernel-flashed image.
-   - This is critical for `dd` operations during CI/CD and affects `UBOOT_TARGET_MAP`.
+   - Not proven by compile-only validation. Keep sector-1 as the working assumption until verified against a Hardkernel-flashed image with `fdisk`/`dd`.
 
 ### Phase 1 Output Deliverables
 
-Phase 1 must produce:
-- ✅ **Standalone U-Boot build** of `odroidc5-v2023.01` on Ubuntu container (outside Armbian) — prove it compiles and boots.
-- ✅ **Boot log capture** from flashed U-Boot on hardware — verify prompt + `printenv` output.
-- ✅ **Hardkernel vendor-baseline capture** — full UART boot log, `fdisk -l`, DTB filename, `compatible` string.
-- ✅ **Decision memo** answering all 5 questions above, with evidence (URLs, code snippets, test results).
-
-Only after Phase 1 completes can patches here be authored with confidence.
+- ✅ **Standalone BL33 U-Boot build** of `s7d_odroidc5_defconfig` on Ubuntu 24.04 container succeeds.
+- ⏳ **Full FIP flashable image packaging** is partial/blocked at BL30 RTOS SDK setup.
+- ⏳ **Boot log capture** from flashed U-Boot on hardware is still required.
+- ⏳ **Hardkernel vendor-baseline capture** remains required for `fdisk`, DTB filename, and compatibility details.
 
 ---
 

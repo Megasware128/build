@@ -65,4 +65,4 @@ In the comprehensive ODROID-C5 research report, the vendor baseline capture step
 
 ## TBD Markers
 
-- `<TBD:phase-1-uboot-validation>` — Bootloader offset must be confirmed on actual Hardkernel-provided image
+- `vendor-baseline blocked` — Official Hardkernel image download returned a Cloudflare challenge, so sector-level `@AML` confirmation could not be captured without a browser/session cookie. Keep expected `seek=1` until validated from an image or board dump.
