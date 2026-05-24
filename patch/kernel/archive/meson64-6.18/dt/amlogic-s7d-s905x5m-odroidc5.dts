@@ -1,0 +1,35 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Device tree for Hardkernel ODROID-C5
+ *
+ * Based on Amlogic S905X5M (S7D) SoC.
+ * UART/memory bring-up only; MMC/Ethernet/USB/HDMI require follow-up
+ * S7D mainline driver work (clock controller, pinctrl driver-match, etc.).
+ *
+ * Copyright (C) 2025 Megasware128
+ */
+
+/dts-v1/;
+#include "amlogic-s7d.dtsi"
+
+/ {
+	model = "Hardkernel ODROID-C5";
+	compatible = "hardkernel,odroid-c5", "amlogic,s905x5m", "amlogic,s7d";
+
+	aliases {
+		serial0 = &uart_b;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x0 0x0 0xf0000000>;
+	};
+};
+
+&uart_b {
+	status = "okay";
+};

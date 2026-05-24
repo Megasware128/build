@@ -1,0 +1,39 @@
+# Hardkernel ODROID-C5 — Amlogic S905X5M (S7D) — Track C: Armbian distro kernel
+#
+# Support tier: .wip (Work In Progress) — early bring-up, UART-only boot expected.
+# Maintainer: Megasware128
+#
+# This is the "Armbian-native" port: linux-stable + curated meson64 patchset (BRANCH=current → 6.18),
+# what an upstream Armbian release would ship. Sister boards:
+#   - odroidc5.wip          Track A (Hardkernel Linux 5.15 BSP, full hardware)
+#   - odroidc5-mainline.wip Track B (torvalds v6.16, our own meson-s7d-mainline family)
+#
+# Upstream S7D status in Linux 6.18 (verified torvalds tag):
+#   ✓ UART (via amlogic,meson-s4-uart fallback) — reaches early console
+#   ✓ Pinctrl DTS nodes + amlogic,s7d-pwrc binding
+#   ✗ Clock controller driver — missing, blocks MMC/Ethernet/USB
+#   ✗ MMC / Ethernet / USB / HDMI DTS nodes and drivers
+#
+# This board therefore boots to UART but cannot mount rootfs from SD/eMMC yet.
+# Phase 2 driver work (plan.md) is required to make this image production-usable.
+
+BOARD_NAME="ODROID-C5 (Armbian)"
+BOARD_VENDOR="hardkernel"
+BOARDFAMILY="meson-s7d-armbian"
+BOARD_MAINTAINER="Megasware128"
+INTRODUCED="2025"
+
+# U-Boot defconfig (Hardkernel BL33 path: bl33/v2023/configs/amlogic/s7d_odroidc5_defconfig)
+# Verified working in Tracks A and B.
+BOOTCONFIG="s7d_odroidc5_defconfig"
+
+# Kernel: inherits BRANCH=current → 6.18 from meson64_common.inc
+KERNEL_TARGET="current"
+KERNEL_TEST_TARGET="current"
+
+# Device tree (mainline naming; DTS shipped via meson64-6.18/dt/ bare-file auto-Makefile)
+BOOT_FDT_FILE="amlogic/amlogic-s7d-s905x5m-odroidc5.dtb"
+
+BOOT_SOC="s905x5m"
+SERIALCON="ttyAML0"
+IMAGE_PARTITION_TABLE="msdos"
