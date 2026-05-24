@@ -1,0 +1,1 @@
+# Phase 3b: SoC dtsi expansion — clock, reset, pinctrl, MMC controller, USB PHY, GbE MAC nodes. Author after vendor-baseline + driver-port research.

@@ -1,0 +1,67 @@
+# Hardkernel ODROID-C5 — Amlogic S905X5M (S7D) — Track A: BSP Kernel
+#
+# Support tier: .wip (Work In Progress) — bring-up in progress, not yet stable
+# Maintainer: Megasware128
+#
+# Hardware:
+#   • SoC: Amlogic S905X5M (codename S7D), 6 nm process
+#   • CPU: 4× Cortex-A55 @ 2.5 GHz
+#   • GPU: ARM Mali-G310 V2 @ 850 MHz
+#   • RAM: 4 GB DDR4-3200 (fixed, not upgradeable)
+#   • eMMC: HS400 socket (16 GB – 256 GB modules)
+#   • Network: 1× Gigabit Ethernet (RJ45)
+#   • USB: 4× USB 2.0 Type-A + 1× Micro USB 2.0 OTG
+#   • Video: 1× HDMI 2.0 (4K@60 Hz, HDR/CEC)
+#   • GPIO: 40-pin Pi-compatible header
+#   • Serial: ttyAML0 @ 115200 baud (debug UART)
+#
+# Peripheral Status (Track A — BSP):
+#   • UART (debug):    ✓ Working (verified in Phase 0 vendor-baseline)
+#   • U-Boot:          ⧐ In progress (Phase 1 standalone test, hardkernel/u-boot odroidc5-v2023.01)
+#   • eMMC/SD:         ⧐ Pending (Phase 5 first build + UART test)
+#   • Ethernet:        ⧐ Pending (depends on U-Boot network boot + kernel driver)
+#   • USB:             ⧐ Pending (dwc2/ohci support, Phase 5 kernel boot)
+#   • HDMI:            ⧐ Pending (meson-drm + vendor GPU driver, Phase 5)
+#   • ALSA:            ⧐ Pending (audio driver integration)
+#   • Thermal/Freq:    ⧐ Pending (cpufreq + thermal zone driver validation)
+#   • GPIO:            ⧐ Pending (pinctrl + generic gpio sysfs)
+#
+# Strategy:
+#   This board uses Track A: Amlogic GKI Linux 6.6 BSP kernel from DannieDarko/odroid-c5_linux_common_drivers
+#   (mirror of Amlogic + Hardkernel downstream). Inherits meson-s7d family config (see armbian-board-patches SKILL).
+#   All peripheral drivers + DTS patches live under patch/kernel/archive/meson-s7d-6.6/.
+#
+# Requirements (before first build):
+#   1. Phase 0: Capture vendor-baseline from official Hardkernel Ubuntu 24.04 image
+#      (See plan.md Phase 0: compatible string, DTB filename, U-Boot version, bootloader offset, dmesg)
+#   2. Phase 1: Standalone U-Boot build + flash test (verify hardkernel/u-boot odroidc5-v2023.01 works)
+#   3. Phase 5: First image build with KERNEL_CONFIGURE=yes, capture final .config → config/kernel/linux-meson-s7d-current.config
+#
+
+BOARD_NAME="ODROID-C5"
+BOARD_VENDOR="hardkernel"
+BOARDFAMILY="meson-s7d"
+BOARD_MAINTAINER="Megasware128"
+INTRODUCED="2025"
+
+# U-Boot defconfig
+BOOTCONFIG="<TBD:vendor-baseline confirm exact defconfig name via 'ls configs/' in hardkernel/u-boot odroidc5-v2023.01 branch. Likely 'odroidc5_defconfig' or variant>"
+
+# Kernel targets
+KERNEL_TARGET="current"
+KERNEL_TEST_TARGET="current"
+
+# Device tree blob
+BOOT_FDT_FILE="amlogic/<TBD:vendor-baseline DTB filename from /boot of official Hardkernel Ubuntu image. Likely 's7d_s905x5m_odroidc5.dtb' or similar. Confirm via: 'ls /boot/dtbs/*/amlogic/' on running official image>"
+
+# SoC identifier
+BOOT_SOC="s905x5m"
+
+# Debug serial console
+SERIALCON="ttyAML0"
+
+# Partition table
+IMAGE_PARTITION_TABLE="msdos"
+
+# Optional: uncomment once validated
+# FULL_DESKTOP="yes"

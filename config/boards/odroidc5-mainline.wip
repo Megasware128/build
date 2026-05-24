@@ -1,0 +1,48 @@
+# ODROID-C5 with mainline Linux kernel
+# Track B: upstream kernel bring-up experiment
+#
+# ⚠️ EXPERIMENTAL — This is a long-term mainline kernel port in parallel
+# with Track A (BSP kernel). Mainline support is INCOMPLETE and evolving.
+#
+# Upstream Linux kernel (torvalds main) currently provides only:
+#   ✅ SoC stub (amlogic-s7d.dtsi) — CPUs, GIC-400, PSCI, pinctrl, UART
+#   ✅ Minimal UART output
+#   ❌ eMMC/SD support (driver not ported; kernel panics on rootfs mount)
+#   ❌ Ethernet (no MAC PHY nodes; driver not S7D-ready)
+#   ❌ USB (no host controller DTS nodes)
+#   ❌ HDMI (no display nodes; no meson-drm S7D driver support)
+#   ❌ Audio (no ASoC nodes)
+#
+# Use Track A (BSP kernel, meson-s7d.conf + odroidc5.wip) for production
+# Armbian images with full hardware access. Track B is for developers
+# interested in upstream mainline kernel maturation.
+#
+# Peripheral status matrix (by subsystem):
+# ┌────────────┬──────────┬──────────────────────────────┐
+# │ Subsystem  │ Status   │ Notes                        │
+# ├────────────┼──────────┼──────────────────────────────┤
+# │ UART       │ ✅ Works │ Early console, login via UART│
+# │ eMMC/SD    │ ❌ TODO  │ DTS + driver port Phase 3b   │
+# │ Ethernet   │ ❌ TODO  │ DTS + PHY config Phase 3c    │
+# │ USB (host) │ ❌ TODO  │ dwc2/dwc3 config Phase 3c    │
+# │ HDMI       │ ❌ TODO  │ DRM nodes, Phase 6           │
+# │ GPIO       │ ✅ Parts │ Via pinctrl, no LED driver   │
+# │ SPI        │ ❌ WIP   │ Pinctrl works, no client DTS │
+# │ I²C        │ ❌ WIP   │ Pinctrl works, no client DTS │
+# └────────────┴──────────┴──────────────────────────────┘
+#
+# Kernel submission target: linux-amlogic@lists.infradead.org
+# (Per-patch series with Signed-off-by trailers.)
+
+BOARD_NAME="ODROID-C5 (Mainline)"
+BOARD_VENDOR="hardkernel"
+BOARDFAMILY="meson-s7d-mainline"
+BOARD_MAINTAINER="Megasware128"
+INTRODUCED="2025"
+BOOTCONFIG="odroidc5_defconfig"
+KERNEL_TARGET="current"
+KERNEL_TEST_TARGET="current"
+BOOT_FDT_FILE="amlogic/amlogic-s7d-s905x5m-odroidc5.dtb"
+BOOT_SOC="s905x5m"
+SERIALCON="ttyAML0"
+IMAGE_PARTITION_TABLE="msdos"

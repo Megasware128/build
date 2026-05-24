@@ -1,0 +1,1 @@
+# Phase 3c: board-level peripherals — SD slot, USB hub, GPIO LEDs, GbE PHY config. Depends on 0002 SoC dtsi.

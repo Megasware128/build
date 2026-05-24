@@ -1,0 +1,1 @@
+# Phase 4 uboot-patchdir: enable Armbian extlinux/bootscript support if Phase 1 standalone validation shows Hardkernel default boot flow incompatible.

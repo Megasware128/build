@@ -1,0 +1,50 @@
+# STATUS: draft — needs vendor-baseline + BSP source analysis
+
+## Goal
+Port eMMC/SD controller support from Amlogic GKI 6.6 BSP into mainline Linux meson-gx-mmc driver. S905X5M/S7D uses IP derived from G12A/SM1 but with register layout differences (verify against hardware team docs).
+
+## BSP source to diff against
+```
+DannieDarko/odroid-c5_linux_common_drivers (to be cloned)
+├── drivers/mmc/host/meson-gx-mmc.c              (S7D variant logic)
+├── arch/arm64/boot/dts/amlogic/s7d_meson_mmc.dtsi
+└── arch/arm64/boot/dts/amlogic/s7d_s905x5m_odroidc5.dts (eMMC node)
+```
+
+## Mainline file(s) to extend
+```
+torvalds/linux (v6.16+)
+├── drivers/mmc/host/meson-gx-mmc.c
+├── arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi
+└── arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-bm202.dts (reference board — baseline)
+```
+
+## Expected diff outline
+- compatible string: `"amlogic,s7d-mmc"` (needs DT binding doc in Documentation/devicetree/bindings/mmc/amlogic,meson-gx-mmc.yaml)
+- Clock/reset bindings: clock IDs & reset names (SMC1/G12A reference; S7D may differ)
+- Register layout: verify eMMC_CFG / eMMC_TIMING vs SM1 — timing register shifts?
+- Bus width: emmc 8-bit support (check hw errata vs SM1)
+- DTS: eMMC node in amlogic-s7d.dtsi (pinmux/pad groups → s7d pinctrl driver)
+
+## Open questions
+- [ ] Does S7D eMMC IP use identical register map as SM1, or new layout?
+- [ ] Clock indices: eMMc_clk vs sm1_eMMC_clk — same CLKID enum?
+- [ ] Reset indices: eMMC reset line name in Amlogic reset controller?
+- [ ] eMMC HS400 tuning: are timing parameters identical, or new calibration?
+- [ ] ODroid-C5 PCB: which eMMC socket signal driving — 3.3V only or 1.8V capable?
+- [ ] Pinctrl: are eMMC pads in same group as SM1 odroid-c4?
+
+## Upstream submission target
+- linux-mmc@vger.kernel.org
+- Cc: Ulf Hansson (MMC maintainer), linux-amlogic@lists.infradead.org
+- Get_maintainer.pl on patch (TBD)
+- Binding doc MUST accompany
+
+## Acceptance criteria
+- [ ] BSP driver diffed against mainline (identify deltas)
+- [ ] Minimal patch authored (compatible string + binding)
+- [ ] Kernel builds clean (CONFIG_MMC_MESON_GX=y)
+- [ ] DTS boot w/ eMMC node attached, dmesg shows mmc registration
+- [ ] eMMC accessible: `ls /dev/mmcblk*` + basic R/W to partition
+- [ ] DT binding YAML doc written & passes yamllint
+- [ ] Posted to linux-mmc + Signed-off-by

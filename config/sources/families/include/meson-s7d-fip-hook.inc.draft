@@ -1,0 +1,28 @@
+# DRAFT — not yet wired in. Source this from meson-s7d.conf only after Phase 1 confirms FIP flow is needed.
+# Template based on existing meson64_common.inc `uboot_g12_postprocess` pattern.
+# Reference: https://github.com/armbian/build/blob/main/config/sources/families/include/meson64_common.inc
+
+function post_uboot_custom_postprocess__odroidc5_amlogic_fip() {
+    display_alert "Packaging Amlogic FIP for ODROID-C5" "$BOARD" "info"
+    
+    # <TBD:phase-1-uboot-validation>
+    # Phase 1 must confirm:
+    # - Location and format of BL2/BL30/BL31/BL32/BL33 blobs (LibreELEC amlogic-boot-fip or embedded in source?)
+    # - Whether aml_encrypt tool is required for FIP packaging
+    # - Final u-boot.bin.sd.bin location and naming convention
+    # - Whether Amlogic fip/build.sh or fip/build.py exists and can be invoked
+    # - Whether BL33 (final bootloader) is compatible with Armbian extlinux/bootscript flow
+    
+    # Sketch of FIP build (awaiting Phase 1 validation):
+    # 1. cd "${BOOTSOURCEDIR}"
+    # 2. Ensure BL2/BL30/BL31 blobs are in place (bl2.bin, bl30.bin, bl31.bin, etc.)
+    # 3. Invoke hardkernel/u-boot fip/build.sh or equivalent
+    #    Example: ./fip/build.sh || python3 fip/build.py
+    # 4. Verify final artifact exists: ${BOOTSOURCEDIR}/fip/build/u-boot.bin (or u-boot.bin.sd.bin)
+    # 5. Copy to ${uboot_name}:
+    #    cp fip/build/u-boot.bin ${uboot_name}/u-boot.bin
+    #    OR: cp u-boot.bin.sd.bin ${uboot_name}/u-boot.bin
+    # 6. Return 0 (success) or 1 (failure for build to abort)
+    
+    return 0
+}

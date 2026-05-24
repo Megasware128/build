@@ -1,0 +1,53 @@
+# STATUS: draft — needs vendor-baseline + BSP source analysis
+
+## Goal
+Port Ethernet (stmmac DWMAC) controller support from Amlogic GKI 6.6 BSP into mainline. S905X5M/S7D has 1× GbE RGMII interface (likely RTL8211F-CG PHY). Identify glue layer differences vs SM1 variant.
+
+## BSP source to diff against
+```
+DannieDarko/odroid-c5_linux_common_drivers (to be cloned)
+├── drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.c (S7D variant?)
+├── drivers/net/phy/realtek.c                           (RTL8211F support)
+├── arch/arm64/boot/dts/amlogic/s7d_meson_eth.dtsi
+└── arch/arm64/boot/dts/amlogic/s7d_s905x5m_odroidc5.dts (eth node + pinctrl)
+```
+
+## Mainline file(s) to extend
+```
+torvalds/linux (v6.16+)
+├── drivers/net/ethernet/stmicro/stmmac/dwmac-meson8b.c (S7D variant logic)
+├── drivers/net/phy/realtek.c                           (already supports RTL8211F)
+├── arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi       (eth node stub)
+└── arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-bm202.dts (no eth — add!)
+```
+
+## Expected diff outline
+- compatible string: `"amlogic,s7d-dwmac"` (DT binding update in Documentation/devicetree/bindings/net/amlogic,dwmac.yaml)
+- Glue layer: register offsets, clock gating, reset sequencing vs SM1
+- RGMII timing: delay tuning (check hw errata vs SM1 — calibration register shifts?)
+- PHY config: RTL8211F negotiation (1000base-T full duplex, RGMII mode bits)
+- DTS: eth node w/ clocks/resets/phy-handle, pinctrl groups for RGMII pads
+
+## Open questions
+- [ ] Does S7D DWMAC glue use identical register layout as SM1 (dwmac-meson8b)?
+- [ ] RGMII delay tuning: which registers, same bit shifts as SM1?
+- [ ] PHY detection: does RTL8211F auto-negotiate or need firmware patch?
+- [ ] Clock: eth_core_clk vs sm1_eth_clk — same CLKID?
+- [ ] Reset: does eth need PLL_ETH reset, same as SM1?
+- [ ] PCB pinout: RGMII pin group mapping — same group name as C4, or new?
+- [ ] Interrupt: PHY IRQ line from GPIO, same as C4?
+
+## Upstream submission target
+- netdev@vger.kernel.org
+- Cc: Francescon Meda, Giuseppe Cavallaro, linux-amlogic@lists.infradead.org
+- Get_maintainer.pl on patch (TBD)
+- Binding doc MUST accompany
+
+## Acceptance criteria
+- [ ] BSP ETH driver diffed vs mainline (identify hw glue deltas)
+- [ ] Minimal patch authored (compatible + binding + pinctrl DTS node)
+- [ ] Kernel builds clean (CONFIG_STMMAC_ETH=y, CONFIG_REALTEK_PHY=y)
+- [ ] DTS boot w/ eth node, dmesg shows link detection
+- [ ] `ip link show eth0`, ping test from host → success
+- [ ] DT binding YAML updated + yamllint passes
+- [ ] Posted to netdev + Signed-off-by

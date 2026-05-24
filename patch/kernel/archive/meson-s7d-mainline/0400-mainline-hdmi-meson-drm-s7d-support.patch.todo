@@ -1,0 +1,58 @@
+# STATUS: draft — needs vendor-baseline + BSP source analysis
+
+## Goal
+Port HDMI output support from Amlogic GKI 6.6 BSP into mainline drm/meson. S905X5M/S7D supports HDMI 2.0 (4K@60Hz with HDR, CEC, EDID). Identify DW HDMI encoder variant differences vs SM1, PHY configuration.
+
+## BSP source to diff against
+```
+DannieDarko/odroid-c5_linux_common_drivers (to be cloned)
+├── drivers/gpu/drm/meson/meson_dw_hdmi.c       (S7D HDMI encoder glue)
+├── drivers/gpu/drm/meson/meson_hdmi_phy.c      (S7D PHY configuration)
+├── arch/arm64/boot/dts/amlogic/mesons7d_drm.dtsi
+├── arch/arm64/boot/dts/amlogic/s7d_s905x5m_odroidc5.dts (hdmi node)
+└── arch/arm64/boot/dts/amlogic/overlays/odroidc5/hdmi*.dtsi
+```
+
+## Mainline file(s) to extend
+```
+torvalds/linux (v6.16+)
+├── drivers/gpu/drm/meson/meson_dw_hdmi.c       (add S7D variant logic)
+├── drivers/gpu/drm/meson/meson_hdmi_phy.c      (add S7D PHY tuning)
+├── drivers/gpu/drm/bridge/dw-hdmi.c            (DW HDMI common — may need mode additions)
+├── arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi (hdmi node stub)
+└── arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-bm202.dts (no HDMI — add!)
+```
+
+## Expected diff outline
+- DRM compatible strings: `"amlogic,s7d-dw-hdmi"`, `"amlogic,s7d-hdmi-phy"` (bindings in Documentation/devicetree/bindings/display/amlogic,meson-dw-hdmi.yaml)
+- HDMI encoder glue: register offsets vs SM1, clock gating, reset sequencing
+- PHY tuning: impedance calibration, TX swing, pre-emphasis — chip-specific hw team values
+- DRM mode database: 4K@60Hz mode timing verification (CEA-861 standard)
+- DTS: hdmi node w/ phy-handle, hpd-gpio, i2c-ddc (DDC/CEC)
+
+## Open questions
+- [ ] Does S7D HDMI encoder use identical register layout as SM1 dw_hdmi glue?
+- [ ] PHY tuning: TX impedance cal, swing/pre-emphasis registers — same as SM1 or new?
+- [ ] TMDS clock: is 4K@60Hz timing achievable on S7D PCLK domain?
+- [ ] DDC/EDID: does I2C-DDC controller work on S7D, same as SM1?
+- [ ] CEC: is CEC enabled in S7D silicon, or dropped vs C4?
+- [ ] Clock: hdmi_clk vs sm1_hdmi_clk — same CLKID enum?
+- [ ] Reset: hdmi reset lines — same as SM1?
+- [ ] GPIO: HPD pin assignment on C5 PCB — which GPIO?
+
+## Upstream submission target
+- dri-devel@lists.freedesktop.org (DRM GPU drivers)
+- Cc: Neil Armstrong, Kevin Hilman, linux-amlogic@lists.infradead.org
+- Get_maintainer.pl on patch (TBD)
+- Binding doc MUST accompany
+
+## Acceptance criteria
+- [ ] BSP HDMI driver diffed vs mainline (identify PHY/encoder deltas)
+- [ ] Minimal patch authored (compatible + binding + DTS node)
+- [ ] Kernel builds clean (CONFIG_DRM_MESON=y, CONFIG_DRM_DW_HDMI_ACP=y)
+- [ ] DTS boot w/ hdmi node, dmesg shows DRM device, XR&R detected
+- [ ] HDMI HPD detection: plug/unplug confirmed in `cat /sys/class/drm/card0-*/status`
+- [ ] 4K@60Hz mode set: `xrandr` lists 4K, `xrandr --output HDMI1 --mode 4K60` succeeds
+- [ ] EDID read: `cat /sys/class/drm/card0-HDMI-A1/edid` valid
+- [ ] DT binding YAML written + yamllint passes
+- [ ] Posted to dri-devel + Signed-off-by

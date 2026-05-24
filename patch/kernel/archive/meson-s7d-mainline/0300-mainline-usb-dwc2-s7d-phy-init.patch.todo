@@ -1,0 +1,57 @@
+# STATUS: draft — needs vendor-baseline + BSP source analysis
+
+## Goal
+Port USB 2.0 PHY + DWC2 device controller support from Amlogic GKI 6.6 BSP into mainline. S905X5M/S7D has 4× USB 2.0 Type-A ports (no USB 3.0). Identify PHY glue layer changes vs SM1, USB hub topology.
+
+## BSP source to diff against
+```
+DannieDarko/odroid-c5_linux_common_drivers (to be cloned)
+├── drivers/phy/amlogic/phy-meson-g12a-usb2.c    (S7D PHY variant?)
+├── drivers/phy/amlogic/phy-meson-usb2-phy.c     (if separate file)
+├── drivers/usb/dwc2/core.c / dwc2-pci.c         (DWC2 controller glue)
+├── arch/arm64/boot/dts/amlogic/s7d_meson_usb2.dtsi
+└── arch/arm64/boot/dts/amlogic/s7d_s905x5m_odroidc5.dts (usb hub node)
+```
+
+## Mainline file(s) to extend
+```
+torvalds/linux (v6.16+)
+├── drivers/phy/amlogic/phy-meson-g12a-usb2.c   (add S7D variant support)
+├── drivers/usb/dwc2/core.c / dwc2-pci.c        (S7D USB glue, if different)
+├── drivers/usb/host/ehci-platform.c            (USB hub controller, if applicable)
+├── arch/arm64/boot/dts/amlogic/amlogic-s7d.dtsi (usb PHY stubs)
+└── arch/arm64/boot/dts/amlogic/amlogic-s7d-s905x5m-bm202.dts (no USB nodes)
+```
+
+## Expected diff outline
+- USB PHY compatible: `"amlogic,s7d-usb2-phy"` (binding in Documentation/devicetree/bindings/phy/amlogic,meson-g12a-usb2-phy.yaml)
+- PHY register layout: tuning registers vs G12A — new offsets or bit shifts?
+- Glue layer: PLL configuration, DPLL trim values (chip-specific per hw team)
+- USB hub topology: 4× USB 2.0 ports routed via internal hub (possibly Amlogic hub block or external ASM1142?)
+- DTS: 4× usb nodes w/ phy-handle, vbus-supply GPIO (if present on C5 board)
+
+## Open questions
+- [ ] Does S7D USB2 PHY use same register layout as G12A, or new layout?
+- [ ] PHY tuning: DPLL trim bits, same as G12A or new calibration?
+- [ ] USB glue: does DWC2 host controller need variant support, or reuse G12A?
+- [ ] Hub topology: are 4 ports routed via internal Amlogic hub, or external USB hub IC?
+- [ ] Clock: usb2_clk vs g12a_usb2_clk — same CLKID?
+- [ ] Reset: usb2 reset lines — same as SM1/G12A?
+- [ ] Power: vbus-supply GPIO (if present) — which GPIO pin on C5?
+- [ ] OTG: is OTG port (micro USB) supported in DWC2, or disabled?
+
+## Upstream submission target
+- linux-usb@vger.kernel.org
+- Cc: Felipe Balbi, Kevin Hilman, linux-amlogic@lists.infradead.org
+- Get_maintainer.pl on patch (TBD)
+- Binding doc MUST accompany for new compatible
+
+## Acceptance criteria
+- [ ] BSP USB PHY driver diffed vs mainline (identify hw glue deltas)
+- [ ] Minimal patch authored (compatible + binding + DTS phy nodes)
+- [ ] Kernel builds clean (CONFIG_USB_DWC2_HOST=y, CONFIG_AMLOGIC_PHY_USB2=y)
+- [ ] DTS boot w/ 4× USB2 phy nodes, dmesg shows phy initialization
+- [ ] `lsusb` detects hub, attach USB device → recognized
+- [ ] Basic USB mass storage R/W test if device attached
+- [ ] DT binding YAML written + yamllint passes
+- [ ] Posted to linux-usb + Signed-off-by
